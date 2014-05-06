@@ -27,6 +27,9 @@ def main():
     model = OriginalAccountModel(session)
     for i in range(1000):
         model.debit(account, i * 999)
+        session.commit()
+    print model.amount(account)
+    # TODO:
 
 if __name__ == '__main__':
     main()
