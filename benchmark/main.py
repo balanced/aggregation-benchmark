@@ -126,21 +126,40 @@ def main():
         proces.append(proc)
         proc.start()
     context = zmq.Context()
-    socket = context.socket(zmq.REQ)
+    socket = context.socket(zmq.XREQ)
     socket.bind(endpoint)
 
     time.sleep(1)
 
-    # submit requests
-    for i in xrange(100):
-        socket.send_multipart([random.choice([b'amount', b'debit', b'credit']), str(account.guid)])
-        resp = socket.recv_multipart()
-        cmd, _, begin, end = resp
-        logger.info('Elapsed %s', float(end) - float(begin))
-        print cmd, begin, end
+    requests = [random.choice([b'amount', b'debit', b'credit']) for _ in range(args.sample)]
+    poller = zmq.Poller()
+    poller.register(socket)
+
+    results = []
+
+    while len(results) < args.sample:
+        sockets = dict(poller.poll(0.1))
+        if socket not in sockets:
+            continue
+        # good to send
+        if sockets[socket] & zmq.POLLOUT and requests:
+            req = requests.pop(0)
+            socket.send_multipart([b'', req, str(account.guid)])
+            logger.info('Send %s', req)
+        # good to receive
+        if sockets[socket] & zmq.POLLIN:
+            resp = socket.recv_multipart()
+            _, cmd, _, begin, end = resp
+            logger.info('Elapsed %s', float(end) - float(begin))
+            results.append((cmd, begin, end))
+            print cmd, begin, end
+
     for _ in xrange(args.concurrent):
-        socket.send_multipart([b'exit', b''])
+        socket.send_multipart([b'', b'exit', b''])
         socket.recv_multipart()
+    for proc in proces:
+        proc.join()
+    logger.info('done.')
 
 
 if __name__ == '__main__':
