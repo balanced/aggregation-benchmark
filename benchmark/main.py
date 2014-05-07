@@ -55,6 +55,8 @@ def worker(endpoint, model_type):
     while True:
         cmds = socket.recv_multipart()
         cmd, account_guid = cmds
+        if cmd == 'exit':
+            break
         session = DBSession()
         model = model_factory(session, model_type)
         account = session.query(tables.Account).get(account_guid)
@@ -70,8 +72,6 @@ def worker(endpoint, model_type):
         elif cmd == 'amount':
             model.amount(account)
             session.commit()
-        else:
-            break
         DBSession.remove()
         end = time.time()
         elapsed = end - begin
