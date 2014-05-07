@@ -85,10 +85,10 @@ def main():
     parser.add_argument('model', metavar='MODEL', type=str, nargs=1,
                         help='which model to run (original, scalar or materialized)')
     parser.add_argument('--init-debits', dest='init_debits', action='store',
-                        default=1000,
+                        default=1000, type=int,
                         help='initial debits count (default: 1,000)')
     parser.add_argument('--init-credits', dest='init_credits', action='store',
-                        default=1000,
+                        default=1000, type=int,
                         help='initial debits count (default: 1,000)')
     parser.add_argument('--concurrent', dest='concurrent', type=int, action='store',
                         default=8,
