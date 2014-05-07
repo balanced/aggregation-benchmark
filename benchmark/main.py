@@ -7,7 +7,7 @@ import time
 import multiprocessing
 
 import zmq
-
+import newrelic.agent
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session
 from sqlalchemy.orm import sessionmaker
@@ -32,6 +32,13 @@ def init_db_session():
     return DBSession
 
 
+def init_newrelic():
+    logger = logging.getLogger(__name__)
+    if os.environ.get('NEWRELIC_FILE') is not None:
+        logger.info('Initialize newrelic from %s', os.environ['NEWRELIC_FILE'])
+        newrelic.agent.initialize(os.environ['NEWRELIC_FILE'])
+
+
 def model_factory(session, model_type):
     if model_type == 'original':
         model = OriginalAccountModel(session)
@@ -42,10 +49,24 @@ def model_factory(session, model_type):
     return model
 
 
+@newrelic.agent.function_trace()
+def process_req(model, session, account, cmd):
+    if cmd == 'debit':
+        model.debit(account, random.randint(1, 65536))
+        session.commit()
+    elif cmd == 'credit:':
+        model.debit(account, -random.randint(1, 65536))
+        session.commit()
+    elif cmd == 'amount':
+        model.amount(account)
+        session.commit()
+
+
 def worker(endpoint, model_type):
     logger = logging.getLogger(__name__)
     logger.info('Worker PID: %s', os.getpid())
 
+    init_newrelic()
     DBSession = init_db_session()
 
     logger.info('Connecting to %s', endpoint)
@@ -65,17 +86,9 @@ def worker(endpoint, model_type):
         logger.debug('Run command %s on %s', cmd, account_guid)
 
         begin = time.time()
-        if cmd == 'debit':
-            model.debit(account, random.randint(1, 65536))
-            session.commit()
-        elif cmd == 'credit:':
-            model.debit(account, -random.randint(1, 65536))
-            session.commit()
-        elif cmd == 'amount':
-            model.amount(account)
-            session.commit()
-        DBSession.remove()
+        process_req(model, session, account, cmd)
         end = time.time()
+        DBSession.remove()
         socket.send_multipart(cmds + [str(begin), str(end)])
 
 
@@ -99,6 +112,7 @@ def main():
 
     args = parser.parse_args()
 
+    init_newrelic()
     DBSession = init_db_session()
     session = DBSession()
 
