@@ -148,7 +148,7 @@ def main():
     load_reqs(args.init_credits, b'credit')
 
     def generate_requests(number):
-        for _ in xrange(num):
+        for _ in xrange(number):
             yield random.choice([b'amount', b'debit', b'credit'])
 
     requests = generate_requests(args.sample)
