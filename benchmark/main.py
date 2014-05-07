@@ -53,13 +53,11 @@ def model_factory(session, model_type):
 def process_req(model, session, account, cmd):
     if cmd == 'debit':
         model.debit(account, random.randint(1, 65536))
-        session.commit()
     elif cmd == 'credit:':
-        model.debit(account, -random.randint(1, 65536))
-        session.commit()
+        model.credit(account, -random.randint(1, 65536))
     elif cmd == 'amount':
         model.amount(account)
-        session.commit()
+    session.commit()
 
 
 def worker(endpoint, model_type):
@@ -88,7 +86,7 @@ def worker(endpoint, model_type):
 
         begin = time.time()
         with newrelic.agent.BackgroundTask(
-            newrelic_app, name=cmd, group='benchmark'
+            newrelic_app, name=cmd, group=model_type,
         ):
             process_req(model, session, account, cmd)
         end = time.time()
