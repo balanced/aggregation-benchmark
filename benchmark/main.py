@@ -59,6 +59,9 @@ def process_req(model, session, account, cmd):
         model.debit(account, random.randint(1, 65536))
     elif cmd == 'credit':
         model.credit(account, -random.randint(1, 65536))
+    elif cmd == 'init_credit':
+        # skip amount check
+        model.credit(account, -random.randint(1, 65536), True)
     elif cmd == 'amount':
         model.amount(account)
     else:
@@ -181,7 +184,10 @@ def main():
     load_reqs(args.init_debits, b'debit')
 
     logger.info('Running initial work load %s credits', args.init_credits)
-    load_reqs(args.init_credits, b'credit')
+    if args.model[0] != 'materialized':
+        load_reqs(args.init_credits, b'credit')
+    else:
+        load_reqs(args.init_credits, b'init_credit')
 
     def generate_requests(number):
         for _ in xrange(number):

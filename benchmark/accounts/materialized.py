@@ -17,21 +17,22 @@ class MaterializedAccountModel(BaseAccountModel):
         )
         self.session.add(ledger)
 
-    def credit(self, account, amount):
+    def credit(self, account, amount, skip_check=False):
         ledger = Ledger(
             guid=make_guid(),
             account=account,
             amount=amount,
         )
-        # We need to check remaining amount here, before we credit to others
-        (
-            self.session
-            .query(AccountAmount)
-            .filter(AccountAmount.account_guid == account.guid)
-            .with_lockmode('update')
-            .one()
-        )
-        self.amount(account)
+        if not skip_check:
+            # We need to check remaining amount here, before we credit to others
+            (
+                self.session
+                .query(AccountAmount)
+                .filter(AccountAmount.account_guid == account.guid)
+                .with_lockmode('update')
+                .one()
+            )
+            self.amount(account)
         self.session.add(ledger)
 
     def amount(self, account):
