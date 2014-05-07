@@ -56,6 +56,7 @@ def worker(endpoint, model_type):
         cmds = socket.recv_multipart()
         cmd, account_guid = cmds
         if cmd == 'exit':
+            logger.info('Exit')
             socket.send_multipart([b''])
             break
         session = DBSession()
@@ -128,7 +129,7 @@ def main():
     socket = context.socket(zmq.REQ)
     socket.bind(endpoint)
 
-    time.sleep(2)
+    time.sleep(1)
 
     # submit requests
     for i in xrange(100):
