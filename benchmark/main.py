@@ -56,6 +56,7 @@ def worker(endpoint, model_type):
         cmds = socket.recv_multipart()
         cmd, account_guid = cmds
         if cmd == 'exit':
+            socket.send_multipart([''])
             break
         session = DBSession()
         model = model_factory(session, model_type)
@@ -134,6 +135,7 @@ def main():
         logger.info('Elapsed %s', float(elapsed))
     for _ in xrange(args.concurrent):
         socket.send_multipart([b'exit', b''])
+        socket.recv_multipart()
 
 
 if __name__ == '__main__':
