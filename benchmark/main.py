@@ -67,6 +67,7 @@ def worker(endpoint, model_type):
     logger.info('Worker PID: %s', os.getpid())
 
     init_newrelic()
+    newrelic_app = newrelic.agent.application()
     DBSession = init_db_session()
 
     logger.info('Connecting to %s', endpoint)
@@ -86,7 +87,10 @@ def worker(endpoint, model_type):
         logger.debug('Run command %s on %s', cmd, account_guid)
 
         begin = time.time()
-        process_req(model, session, account, cmd)
+        with newrelic.agent.BackgroundTask(
+            newrelic_app, name=cmd, group='benchmark'
+        ):
+            process_req(model, session, account, cmd)
         end = time.time()
         DBSession.remove()
         socket.send_multipart(cmds + [str(begin), str(end)])
