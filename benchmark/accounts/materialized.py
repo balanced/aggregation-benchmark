@@ -24,7 +24,13 @@ class MaterializedAccountModel(BaseAccountModel):
             amount=amount,
         )
         # We need to check remaining amount here, before we credit to others
-        self.session.query(AccountAmount).with_lockmode('update').one()
+        (
+            self.session
+            .query(AccountAmount)
+            .filter(AccountAmount.account_guid == account.guid)
+            .with_lockmode('update')
+            .one()
+        )
         self.amount(account)
         self.session.add(ledger)
 
