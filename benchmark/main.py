@@ -159,7 +159,7 @@ def main():
     last_update = None
     while result_count < args.sample:
         now = time.time()
-        if last_update is None or (now - last_update) > 1.0:
+        if last_update is None or (now - last_update) >= 5.0:
             last_update = now
             logger.info(
                 'Progress %s / %s (%02d %%)',
