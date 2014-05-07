@@ -72,7 +72,7 @@ def worker(endpoint, model_type):
             session.commit()
         else:
             break
-        session.remove()
+        DBSession.remove()
         end = time.time()
         elapsed = end - begin
         socket.send_multipart(cmds + [str(elapsed)])
@@ -132,7 +132,8 @@ def main():
         resp = socket.recv_multipart()
         _, _, elapsed = resp
         logger.info('Elapsed %s', float(elapsed))
-    socket.send_multipart(['exit', ''])
+    for _ in xrange(args.concurrent):
+        socket.send_multipart([b'exit', b''])
 
 
 if __name__ == '__main__':
