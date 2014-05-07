@@ -104,6 +104,7 @@ def main():
 
     logger.info('Model type %s', args.model[0])
     account = tables.Account(guid=make_guid())
+    session.commit()
 
     # run benchmark here
     logger.info('Running benchmark on concurrent level %s', args.concurrent)
