@@ -4,6 +4,7 @@ from sqlalchemy import Column
 from sqlalchemy import Unicode
 from sqlalchemy import Integer
 from sqlalchemy import DateTime
+from sqlalchemy import func
 from sqlalchemy.orm import relationship
 from sqlalchemy.schema import ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
@@ -24,7 +25,6 @@ class Account(DeclarativeBase):
     ledgers = relationship(
         'Ledger',
         backref='account',
-        #primaryjoin='Ledger.account_guid == Account.guid',
     )
 
 
@@ -43,6 +43,12 @@ class Ledger(DeclarativeBase):
     )
     #: for scalar approach
     amount = Column(Integer)
+    #: created datetime of this ledger
+    created_at = Column(
+        DateTime,
+        nullable=False,
+        default=func.clock_timestamp(),
+    )
 
 
 class AccountAmount(DeclarativeBase):

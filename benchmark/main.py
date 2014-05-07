@@ -16,6 +16,7 @@ from . import tables
 from .utils import make_guid
 from .accounts.original import OriginalAccountModel
 from .accounts.scalar import ScalarAccountModel
+from .accounts.materialized import MaterializedAccountModel
 
 
 def init_db_session():
@@ -44,6 +45,8 @@ def model_factory(session, model_type):
         model = OriginalAccountModel(session)
     elif model_type == 'scalar':
         model = ScalarAccountModel(session)
+    elif model_type == 'materialized':
+        model = MaterializedAccountModel(session)
     else:
         raise ValueError('Unknown model {}'.format(model_type))
     return model
@@ -113,12 +116,16 @@ def main():
     parser.add_argument('--sample', dest='sample', type=int, action='store',
                         default=1000,
                         help='number of sample to send (default: 1000)')
+    parser.add_argument('--cache-update-period', dest='cache_period', type=int,
+                        action='store', default=30,
+                        help='period of seconds to update cache (default: 30)')
 
     args = parser.parse_args()
 
     init_newrelic()
     DBSession = init_db_session()
     session = DBSession()
+    model = model_factory(session, args.model[0])
 
     logger.info('Model type %s', args.model[0])
     account = tables.Account(guid=make_guid())
@@ -177,6 +184,7 @@ def main():
     result_count = 0
     begin = time.time()
     last_update = None
+    last_cache = None
     while result_count < args.sample:
         now = time.time()
         if last_update is None or (now - last_update) >= 5.0:
@@ -187,6 +195,14 @@ def main():
                 args.sample,
                 (result_count / float(args.sample)) * 100
             )
+        if (
+            args.model[0] == 'materialized' and
+            (last_cache is None or (now - last_cache) >= args.cache_period)
+        ):
+            last_cache = now
+            current_amount = model.update_amount_cache(account)
+            session.commit()
+            logger.info('Update cache, current amount: %s', current_amount)
 
         sockets = dict(poller.poll(0.1))
         if socket not in sockets:
