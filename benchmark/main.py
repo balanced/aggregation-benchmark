@@ -123,18 +123,21 @@ def main():
     poller = zmq.Poller()
     poller.register(socket)
 
-    def load_reqs(num, req_type):
-        while num > 0:
+    def load_reqs(number, req_type):
+        to_send = number
+        to_receive = number
+        while to_send > 0 or to_receive > 0:
             sockets = dict(poller.poll(0.1))
             if socket not in sockets:
                 continue
             # good to send
-            if sockets[socket] & zmq.POLLOUT and requests:
-                num -= 1
+            if sockets[socket] & zmq.POLLOUT and to_send:
+                to_send -= 1
                 socket.send_multipart([b'', req_type, str(account.guid)])
                 logger.info('Send %s', req_type)
             # good to receive
             if sockets[socket] & zmq.POLLIN:
+                to_receive -= 1
                 # simply receive and dump
                 socket.recv_multipart()
 
@@ -144,7 +147,7 @@ def main():
     logger.info('Running initial work load %s credits', args.init_credits)
     load_reqs(args.init_credits, 'credit')
 
-    def generate_requests(num):
+    def generate_requests(number):
         for _ in xrange(num):
             yield random.choice([b'amount', b'debit', b'credit'])
 
