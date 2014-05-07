@@ -62,7 +62,7 @@ def worker(endpoint, model_type):
         session = DBSession()
         model = model_factory(session, model_type)
         account = session.query(tables.Account).get(account_guid)
-        logger.info('Run command %s on %s', cmd, account_guid)
+        logger.debug('Run command %s on %s', cmd, account_guid)
 
         begin = time.time()
         if cmd == 'debit':
@@ -135,7 +135,7 @@ def main():
             if sockets[socket] & zmq.POLLOUT and to_send:
                 to_send -= 1
                 socket.send_multipart([b'', req_type, str(account.guid)])
-                logger.info('Send %s', req_type)
+                logger.debug('Send %s', req_type)
             # good to receive
             if sockets[socket] & zmq.POLLIN:
                 to_receive -= 1
@@ -155,7 +155,19 @@ def main():
     requests = generate_requests(args.sample)
     request_empty = False
     result_count = 0
+    begin = time.time()
+    last_update = None
     while result_count < args.sample:
+        now = time.time()
+        if last_update is None or (now - last_update) > 1.0:
+            last_update = now
+            logger.info(
+                'Progress %s / %s (%02d %%)',
+                result_count,
+                args.sample,
+                (result_count / float(args.sample)) * 100
+            )
+
         sockets = dict(poller.poll(0.1))
         if socket not in sockets:
             continue
@@ -167,12 +179,12 @@ def main():
                 request_empty = True
             if not request_empty:
                 socket.send_multipart([b'', req, str(account.guid)])
-                logger.info('Send %s', req)
+                logger.debug('Send %s', req)
         # good to receive
         if sockets[socket] & zmq.POLLIN:
             resp = socket.recv_multipart()
             _, cmd, _, begin, end = resp
-            logger.info('Elapsed %s', float(end) - float(begin))
+            logger.debug('Elapsed %s', float(end) - float(begin))
             result_count += 1
             print cmd, begin, end
 
