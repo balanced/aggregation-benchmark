@@ -128,6 +128,8 @@ def main():
     socket = context.socket(zmq.REQ)
     socket.bind(endpoint)
 
+    time.sleep(2)
+
     # submit requests
     for i in xrange(100):
         socket.send_multipart([random.choice([b'amount', b'debit', b'credit']), str(account.guid)])
