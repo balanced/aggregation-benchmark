@@ -4,6 +4,7 @@ import argparse
 import random
 import logging
 import time
+import datetime
 import multiprocessing
 
 import zmq
@@ -130,6 +131,12 @@ def main():
     logger.info('Model type %s', args.model[0])
     account = tables.Account(guid=make_guid())
     session.add(account)
+    cache = tables.AccountAmount(
+        account_guid=account.guid,
+        amount=0,
+        updated_at=datetime.datetime(2000, 1, 1),
+    )
+    session.add(cache)
     session.commit()
     logger.info('Create account %s', account.guid)
 
