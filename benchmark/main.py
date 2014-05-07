@@ -56,7 +56,7 @@ def worker(endpoint, model_type):
         cmds = socket.recv_multipart()
         cmd, account_guid = cmds
         if cmd == 'exit':
-            logger.info('Exit')
+            logger.info('Exit PID: %s', os.getpid())
             socket.send_multipart([b''])
             break
         session = DBSession()
