@@ -39,7 +39,7 @@ class Ledger(DeclarativeBase):
         Unicode(34),
         ForeignKey('account.guid'),
         index=True,
-        nullable=True,
+        nullable=False,
     )
     #: for scalar approach
     amount = Column(Integer)
