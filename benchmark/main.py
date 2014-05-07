@@ -88,7 +88,7 @@ def worker(endpoint, model_type):
 
         begin = time.time()
         with newrelic.agent.BackgroundTask(
-            newrelic_app, name=cmd, group=model_type,
+            newrelic_app, name='{}.{}'.format(model_type, cmd), group=model_type,
         ):
             process_req(model, session, account, cmd)
         end = time.time()
