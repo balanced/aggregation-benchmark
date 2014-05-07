@@ -53,10 +53,12 @@ def model_factory(session, model_type):
 def process_req(model, session, account, cmd):
     if cmd == 'debit':
         model.debit(account, random.randint(1, 65536))
-    elif cmd == 'credit:':
+    elif cmd == 'credit':
         model.credit(account, -random.randint(1, 65536))
     elif cmd == 'amount':
         model.amount(account)
+    else:
+        raise ValueError('Unknown cmd {}'.format(cmd))
     session.commit()
 
 
