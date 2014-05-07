@@ -152,16 +152,21 @@ def main():
             yield random.choice([b'amount', b'debit', b'credit'])
 
     requests = generate_requests(args.sample)
+    request_empty = False
     result_count = 0
     while result_count < args.sample:
         sockets = dict(poller.poll(0.1))
         if socket not in sockets:
             continue
         # good to send
-        if sockets[socket] & zmq.POLLOUT and requests:
-            req = requests.pop(0)
-            socket.send_multipart([b'', req, str(account.guid)])
-            logger.info('Send %s', req)
+        if sockets[socket] & zmq.POLLOUT and not request_empty:
+            try:
+                req = requests.next()
+            except StopIteration:
+                request_empty = True
+            if not request_empty:
+                socket.send_multipart([b'', req, str(account.guid)])
+                logger.info('Send %s', req)
         # good to receive
         if sockets[socket] & zmq.POLLIN:
             resp = socket.recv_multipart()
