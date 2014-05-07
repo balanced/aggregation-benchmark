@@ -47,8 +47,6 @@ def worker(endpoint, model_type):
     logger.info('Worker PID: %s', os.getpid())
 
     DBSession = init_db_session()
-    session = DBSession()
-    model = model_factory(session, model_type)
 
     logger.info('Connecting to %s', endpoint)
     context = zmq.Context()
@@ -57,6 +55,8 @@ def worker(endpoint, model_type):
     while True:
         cmds = socket.recv_multipart()
         cmd, account_guid = cmds
+        session = DBSession()
+        model = model_factory(session, model_type)
         account = session.query(tables.Account).get(account_guid)
         logger.info('Run command %s on %s', cmd, account_guid)
 
@@ -72,6 +72,7 @@ def worker(endpoint, model_type):
             session.commit()
         else:
             break
+        session.remove()
         end = time.time()
         elapsed = end - begin
         socket.send_multipart(cmds + [str(elapsed)])
