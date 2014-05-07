@@ -142,10 +142,10 @@ def main():
                 socket.recv_multipart()
 
     logger.info('Running initial work load %s debits', args.init_debits)
-    load_reqs(args.init_debits, 'debit')
+    load_reqs(args.init_debits, b'debit')
 
     logger.info('Running initial work load %s credits', args.init_credits)
-    load_reqs(args.init_credits, 'credit')
+    load_reqs(args.init_credits, b'credit')
 
     def generate_requests(number):
         for _ in xrange(num):
