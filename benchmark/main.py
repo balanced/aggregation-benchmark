@@ -105,17 +105,6 @@ def main():
     logger.info('Model type %s', args.model[0])
     account = tables.Account(guid=make_guid())
 
-    logger.info('Running initial work load %s debits', args.init_debits)
-    model = model_factory(session, args.model[0])
-    # run initial work load here
-    for _ in xrange(0, args.init_debits):
-        model.debit(account, random.randint(1, 65536))
-        session.commit()
-    logger.info('Running initial work load %s credits', args.init_credits)
-    for _ in xrange(0, args.init_debits):
-        model.debit(account, -random.randint(1, 65536))
-        session.commit()
-
     # run benchmark here
     logger.info('Running benchmark on concurrent level %s', args.concurrent)
     endpoint = 'ipc:///tmp/benchmark'
@@ -131,13 +120,37 @@ def main():
 
     time.sleep(1)
 
-    requests = [random.choice([b'amount', b'debit', b'credit']) for _ in range(args.sample)]
     poller = zmq.Poller()
     poller.register(socket)
 
-    results = []
+    def load_reqs(num, req_type):
+        while num > 0:
+            sockets = dict(poller.poll(0.1))
+            if socket not in sockets:
+                continue
+            # good to send
+            if sockets[socket] & zmq.POLLOUT and requests:
+                num -= 1
+                socket.send_multipart([b'', req_type, str(account.guid)])
+                logger.info('Send %s', req_type)
+            # good to receive
+            if sockets[socket] & zmq.POLLIN:
+                # simply receive and dump
+                socket.recv_multipart()
 
-    while len(results) < args.sample:
+    logger.info('Running initial work load %s debits', args.init_debits)
+    load_reqs(args.init_debits, 'debit')
+
+    logger.info('Running initial work load %s credits', args.init_credits)
+    load_reqs(args.init_credits, 'credit')
+
+    def generate_requests(num):
+        for _ in xrange(num):
+            yield random.choice([b'amount', b'debit', b'credit'])
+
+    requests = generate_requests(args.sample)
+    result_count = 0
+    while result_count < args.sample:
         sockets = dict(poller.poll(0.1))
         if socket not in sockets:
             continue
@@ -151,7 +164,7 @@ def main():
             resp = socket.recv_multipart()
             _, cmd, _, begin, end = resp
             logger.info('Elapsed %s', float(end) - float(begin))
-            results.append((cmd, begin, end))
+            result_count += 1
             print cmd, begin, end
 
     for _ in xrange(args.concurrent):
