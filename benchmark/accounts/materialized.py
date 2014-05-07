@@ -47,7 +47,7 @@ class MaterializedAccountModel(BaseAccountModel):
 
         """
         if now is None:
-            now = self.session.query(func.clock_timestamp()).scalar()
+            now = func.clock_timestamp()
         query = (
             self.session
             .query(func.sum(Ledger.amount))
