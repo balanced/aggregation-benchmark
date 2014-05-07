@@ -31,5 +31,5 @@ def make_guid():
     """Generate a GUID and return in base58 encoded form
 
     """
-    uid = uuid.uuid1().bytes
+    uid = uuid.uuid4().bytes
     return b58encode(uid)
