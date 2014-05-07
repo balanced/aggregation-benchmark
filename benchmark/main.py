@@ -58,7 +58,7 @@ def worker(endpoint, model_type):
         cmds = socket.recv_multipart()
         cmd, account_guid = cmds
         account = session.query(tables.Account).get(account_guid)
-        logger.info('Rung command %s on %s', cmd, account_guid)
+        logger.info('Run command %s on %s', cmd, account_guid)
 
         begin = time.time()
         if cmd == 'debit':
@@ -70,6 +70,8 @@ def worker(endpoint, model_type):
         elif cmd == 'amount':
             model.amount(account)
             session.commit()
+        else:
+            break
         end = time.time()
         elapsed = end - begin
         socket.send_multipart(cmds + [str(elapsed)])
@@ -129,6 +131,7 @@ def main():
         resp = socket.recv_multipart()
         _, _, elapsed = resp
         logger.info('Elapsed %s', float(elapsed))
+    socket.send_multipart(['exit', ''])
 
 
 if __name__ == '__main__':
