@@ -75,8 +75,7 @@ def worker(endpoint, model_type):
             session.commit()
         DBSession.remove()
         end = time.time()
-        elapsed = end - begin
-        socket.send_multipart(cmds + [str(elapsed)])
+        socket.send_multipart(cmds + [str(begin), str(end)])
 
 
 def main():
@@ -93,6 +92,9 @@ def main():
     parser.add_argument('--concurrent', dest='concurrent', type=int, action='store',
                         default=8,
                         help='concurrent level (default: 8)')
+    parser.add_argument('--sample', dest='sample', type=int, action='store',
+                        default=1000,
+                        help='number of sample to send (default: 1000)')
 
     args = parser.parse_args()
 
@@ -127,12 +129,12 @@ def main():
     socket.bind(endpoint)
 
     # submit requests
-    # TODO:
     for i in xrange(100):
         socket.send_multipart([random.choice([b'amount', b'debit', b'credit']), str(account.guid)])
         resp = socket.recv_multipart()
-        _, _, elapsed = resp
-        logger.info('Elapsed %s', float(elapsed))
+        cmd, _, begin, end = resp
+        logger.info('Elapsed %s', float(end) - float(begin))
+        print cmd, begin, end
     for _ in xrange(args.concurrent):
         socket.send_multipart([b'exit', b''])
         socket.recv_multipart()
