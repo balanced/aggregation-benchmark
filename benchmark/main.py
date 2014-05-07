@@ -131,6 +131,7 @@ def main():
     logger.info('Model type %s', args.model[0])
     account = tables.Account(guid=make_guid())
     session.add(account)
+    session.flush()
     cache = tables.AccountAmount(
         account_guid=account.guid,
         amount=0,
