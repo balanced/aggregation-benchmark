@@ -5,7 +5,7 @@ from ..tables import Ledger
 from ..utils import make_guid
 
 
-class ScalarsAccountModel(BaseAccountModel):
+class ScalarAccountModel(BaseAccountModel):
     def debit(self, account, amount):
         ledger = Ledger(
             guid=make_guid(),

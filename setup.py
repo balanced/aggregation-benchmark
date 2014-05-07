@@ -10,5 +10,6 @@ setup(
     zip_safe=False,
     install_requires=[
         'SQLALchemy==0.9.4',
+        'pyzmq',
     ],
 )
