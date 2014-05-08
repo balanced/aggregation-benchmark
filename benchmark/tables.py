@@ -48,6 +48,7 @@ class Ledger(DeclarativeBase):
         DateTime,
         nullable=False,
         default=func.clock_timestamp(),
+        index=True,
     )
 
 
