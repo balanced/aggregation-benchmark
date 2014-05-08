@@ -22,6 +22,7 @@ class OriginalAccountModel(BaseAccountModel):
             account=account,
             amount=amount,
         )
+        self.amount(account)
         self.session.add(ledger)
 
     def amount(self, account):
